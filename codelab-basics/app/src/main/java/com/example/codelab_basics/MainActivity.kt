@@ -1,9 +1,14 @@
 package com.example.codelab_basics
 
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,7 +16,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -24,7 +36,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.codelab_basics.ui.theme.CodelabBasicsTheme
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material.icons.Icons.Filled
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,7 +50,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             CodelabBasicsTheme {
-                    MyApp(Modifier.fillMaxSize())
+                MyApp(Modifier.fillMaxSize())
             }
         }
     }
@@ -46,7 +64,7 @@ fun MyApp(modifier: Modifier = Modifier, names: List<String> = listOf("World", "
     Surface(modifier) {
         Column(modifier) {
             if (shouldShowOnBoard) {
-                OnBoardingScreen(onClick = {shouldShowOnBoard = false})
+                OnBoardingScreen(onClick = { shouldShowOnBoard = false })
             } else {
                 Greetings()
             }
@@ -55,9 +73,9 @@ fun MyApp(modifier: Modifier = Modifier, names: List<String> = listOf("World", "
 }
 
 @Composable
-fun Greetings(modifier: Modifier = Modifier, names: List<String> = listOf("World!", "Vimal!")) {
-    Column {
-        for (name in names) {
+fun Greetings(modifier: Modifier = Modifier, names: List<String> = List(1000) { "$it" }) {
+    LazyColumn {
+        items(items = names) { name ->
             Greeting(name = name)
         }
     }
@@ -65,31 +83,71 @@ fun Greetings(modifier: Modifier = Modifier, names: List<String> = listOf("World
 
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
-    val isExpanded = remember { mutableStateOf(false) }
-    val extraPadding = if (isExpanded.value) 46.dp else 0.dp
-    Surface (color = MaterialTheme.colorScheme.primary, modifier = modifier
-        .fillMaxWidth()
-        .padding(2.dp),) {
-        Row(modifier = modifier.padding(24.dp)) {
-            Column(modifier = modifier
-                .weight(1f)
-                .padding(bottom = extraPadding)) {
-                Text(
-                    text = "Hello",
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primary
+        ),
+        modifier = modifier.padding(vertical = 4.dp, horizontal = 8.dp)
+    ) {
+        CardContent(name)
+    }
+}
+
+@Composable
+fun CardContent(name: String) {
+    var isExpanded by rememberSaveable { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier
+            .padding(24.dp)
+            .animateContentSize(
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessLow
                 )
+            )
+    ) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(12.dp)
+        ) {
+            Text(
+                text = "Hello",
+            )
+            Text(
+                text = "$name!",
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.ExtraBold
+                )
+            )
+            if (isExpanded) {
                 Text(
-                    text = "$name!",
+                    text = ("Composem ipsum color sit lazy, " +
+                            "padding theme elit, sed do bouncy. ").repeat(4),
                 )
             }
 
-            ElevatedButton(onClick = {isExpanded.value = !isExpanded.value}) {
-                Text(if (isExpanded.value) "Hide" else "Show")
-            }
+        }
+        IconButton(onClick = { isExpanded = !isExpanded }) {
+            Icon(
+                imageVector = if (isExpanded) Filled.ExpandLess else Filled.ExpandMore,
+                contentDescription = if (isExpanded) {
+                    stringResource(R.string.show_less)
+                } else {
+                    stringResource(R.string.show_more)
+                }
+            )
         }
     }
 }
 
-@Preview(showBackground = true, widthDp = 320)
+@Preview(
+    showBackground = true,
+    widthDp = 320,
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+    name = "MyApp Preview Dark"
+)
 @Composable
 fun MyPreview() {
     CodelabBasicsTheme {
@@ -99,7 +157,11 @@ fun MyPreview() {
 
 @Composable
 fun OnBoardingScreen(modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Column(modifier = modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally,) {
+    Column(
+        modifier = modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
         Text("Welcome to the Basics Codelab!")
         ElevatedButton(onClick = onClick, modifier = Modifier.padding(vertical = 24.dp)) {
             Text("Continue")
